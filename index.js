@@ -237,10 +237,31 @@ io.on("connection", (socket) => {
         });
       } else {
         if (user && user2) {
+          let room_id = arr[0] + arr[1];
           const withoutroom = await DM.create({
             users: arr,
+            room_id: room_id,
             chats: [],
           });
+          User.updateOne(
+            { id: arr[0] },
+            { $push: { conversations: { users: arr, room_id: room_id } } },
+            function (error, success) {
+              if (error) {
+                res.send(error);
+              }
+            }
+          );
+          User.updateOne(
+            { id: arr[1] },
+            { $push: { conversations: { users: arr, room_id: room_id } } },
+            function (error, success) {
+              if (error) {
+                res.send(error);
+              }
+            }
+          );
+
           await socket.join(arr[0] + arr[1]);
           socket.emit("init", {
             chats: withoutroom.chats,

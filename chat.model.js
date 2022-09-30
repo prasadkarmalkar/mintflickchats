@@ -45,6 +45,9 @@ const dmSchema = Schema({
     type: Array,
     required: true,
   },
+  room_id: {
+    type: String,
+  },
   chats: [chatSchema],
 });
 

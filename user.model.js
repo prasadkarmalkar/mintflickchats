@@ -1,7 +1,7 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const userSchema = new Schema(
   {
@@ -42,11 +42,11 @@ const userSchema = new Schema(
     },
     cover_image: {
       type: String,
-      default: '',
+      default: "",
     },
     profile_image: {
       type: String,
-      default: '',
+      default: "",
     },
     livepeer_data: {
       type: Object,
@@ -67,7 +67,7 @@ const userSchema = new Schema(
     },
     polls: {
       type: Array,
-      default: []
+      default: [],
     },
     multistream_platform: {
       type: Array,
@@ -108,7 +108,7 @@ const userSchema = new Schema(
     },
     seenIntro: {
       type: String,
-      default: 'notseen',
+      default: "notseen",
     },
     thumbnail: { type: String },
     streamDetails: { type: Object, default: {} },
@@ -118,7 +118,7 @@ const userSchema = new Schema(
     },
     streamLinks: { type: Array, default: [] },
     album_count: { type: Number, default: 0 },
-    bio: { type: String, default: '', trim: true },
+    bio: { type: String, default: "", trim: true },
     followee_count: { type: Array, default: [] },
     follower_count: { type: Array, default: [] },
     superfan_to: { type: Array, default: [] },
@@ -134,26 +134,30 @@ const userSchema = new Schema(
       type: String,
       required: false,
     },
+    conversations: {
+      type: Array,
+      default: [],
+    },
   },
   {
     timestamps: true,
-  },
+  }
 );
 
 userSchema.methods.generateAuthToken = async function (res) {
   try {
     const token = jwt.sign(
       { _id: this._id.toString() },
-      'mynameissahilpunjabicomputerengineer',
+      "mynameissahilpunjabicomputerengineer"
     );
     this.jwt_token = token;
     await this.save();
     return token;
   } catch (error) {
-    console.log('error is' + error);
-    res.send('error is' + error);
+    console.log("error is" + error);
+    res.send("error is" + error);
   }
 };
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model("User", userSchema);
 module.exports = User;
