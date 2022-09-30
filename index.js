@@ -244,8 +244,16 @@ io.on("connection", (socket) => {
             chats: [],
           });
           User.updateOne(
-            { id: arr[0] },
-            { $push: { conversations: { users: arr, room_id: room_id } } },
+            { id: user.id },
+            {
+              $push: {
+                conversations: {
+                  user_id: user2.id,
+                  room_id: room_id,
+                  username: user2.username,
+                },
+              },
+            },
             function (error, success) {
               if (error) {
                 res.send(error);
@@ -253,8 +261,16 @@ io.on("connection", (socket) => {
             }
           );
           User.updateOne(
-            { id: arr[1] },
-            { $push: { conversations: { users: arr, room_id: room_id } } },
+            { id: user2.id },
+            {
+              $push: {
+                conversations: {
+                  user_id: user.id,
+                  room_id: room_id,
+                  username: user.username,
+                },
+              },
+            },
             function (error, success) {
               if (error) {
                 res.send(error);
