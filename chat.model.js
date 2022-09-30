@@ -40,5 +40,15 @@ const roomSchema = Schema({
   chats: [chatSchema],
 });
 
+const dmSchema = Schema({
+  users: {
+    type: Array,
+    required: true,
+  },
+  chats: [chatSchema],
+});
+
 const Room = mongoose.model("Room", roomSchema);
-module.exports = Room;
+const DM = mongoose.model("DM", dmSchema);
+
+module.exports = { Room, DM };

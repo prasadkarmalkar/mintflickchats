@@ -5,7 +5,7 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const PORT = process.env.PORT || 4000;
 
-const Room = require("./chat.model");
+const { Room, DM } = require("./chat.model");
 const User = require("./user.model");
 const LiveRoom = require("./livechat.model");
 const mongoose = require("mongoose");
@@ -179,6 +179,167 @@ io.on("connection", (socket) => {
             c.username = u.username;
             c.profile_image = u.profile_image;
             io.to(room_admin).emit("message", c);
+          }
+        }
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  });
+
+  socket.on("joindm", async ({ user_id, room_id }) => {
+    try {
+      const user = await User.findOne({ id: user_id });
+      const user2 = await User.findOne({ id: room_id });
+      const dm = await DM.findOne({ users: { $in: [user.id, room_id] } });
+      totalChats = dm ? dm.chats.length : 0; // 100
+      totalPages = Math.ceil(totalChats / pageSize) || 1; //10
+      currentPage = totalPages;
+      skip = Math.abs((currentPage - totalPages) * pageSize);
+      // console.log("total "+ totalChats);
+      // console.log("Pages "+ totalPages);
+      // console.log(skip)
+
+      let chats = [];
+      oldstart = currentPage * pageSize - pageSize;
+      if (dm && user) {
+        for (var i = oldstart; i < totalChats - skip; i++) {
+          // console.log(i)
+          const u = await User.findById(dm.chats[i].user_id).select({
+            username: 1,
+            profile_image: 1,
+          });
+          let chattemp = {
+            _id: dm.chats[i]._id,
+            user_id: dm.chats[i].user_id,
+            username: u.username,
+            profile_image: u.profile_image,
+            type: dm.chats[i].type,
+            message: dm.chats[i].message,
+            createdAt: dm.chats[i].createdAt,
+          };
+          if (dm.chats[i].url) {
+            chattemp.url = dm.chats[i].url;
+          }
+          if (dm.chats[i].reply_to) {
+            chattemp.reply_to = dm.chats[i].reply_to;
+          }
+          chats.push(chattemp);
+        }
+        await socket.join(dm.users[0] + dm.users[1]);
+        socket.emit("init", {
+          chats,
+          currentPage,
+          totalPages,
+          roomId: dm.users[0] + dm.users[1],
+        });
+      } else {
+        if (user && user2) {
+          const withoutroom = await DM.create({
+            users: [user.id, user2.id],
+            chats: [],
+          });
+          await socket.join(user.id + user2.id);
+          socket.emit("init", {
+            chats: withoutroom.chats,
+            currentPage,
+            totalPages,
+            roomId: user.id + user2.id,
+          });
+        }
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }); 
+  socket.on("loaddm", async ({ user_id, room_id, page_no }) => {
+    const user = await User.findOne({ id: user_id });
+    // const room_user = await User.findOne({ username: room_id });
+    const dm = await DM.findOne({ users: { $in: [user.id, room_id] } });
+
+    totalChats = dm ? dm.chats.length : 0; // 100
+    totalPages = Math.ceil(totalChats / pageSize) || 1; //10
+    currentPage = page_no; //9
+    skip = Math.abs((currentPage - totalPages) * pageSize); // 10
+    // console.log("total "+ totalChats);
+    // console.log("Pages "+ totalPages);
+    // console.log(skip)
+    // console.log(oldstart);
+
+    let chats = [];
+    x = currentPage * pageSize - pageSize;
+    if (x < 0) {
+      x = 0;
+    }
+
+    if (dm && user) {
+      // console.log("X "+x)
+      // console.log("oldstart "+oldstart)
+
+      for (var i = x; i < oldstart; i++) {
+        // console.log(i)
+        const u = await User.findById(dm.chats[i].user_id).select({
+          username: 1,
+          profile_image: 1,
+        });
+
+        let chattemp = {
+          _id: dm.chats[i]._id,
+          user_id: dm.chats[i].user_id,
+          username: u.username,
+          profile_image: u.profile_image,
+          type: dm.chats[i].type,
+          message: dm.chats[i].message,
+          createdAt: dm.chats[i].createdAt,
+        };
+        if (dm.chats[i].url) {
+          chattemp.url = dm.chats[i].url;
+        }
+        if (dm.chats[i].reply_to) {
+          chattemp.reply_to = dm.chats[i].reply_to;
+        }
+        chats.push(chattemp);
+      }
+      oldstart = x;
+      // await socket.join(room_user._id.toString());
+      socket.emit("getmore", { chats, totalPages, currentPage });
+    }
+  });
+  socket.on("chatDM", async ({ chat, user_id, user2_id, room_id }) => {
+    try {
+
+      const msgId = new mongoose.Types.ObjectId();
+      let c = {
+        _id: msgId,
+        user_id: chat.user_id,
+        type: chat.type,
+        message: chat.message,
+        createdAt: chat.createdAt,
+      };
+      if (chat.url) {
+        c.url = chat.url;
+      }
+      if (chat.reply_to) {
+        c.reply_to = chat.reply_to;
+      }
+      DM.findOneAndUpdate(
+        { users: { $in: [user_id, user2_id] } },
+        {
+          $push: {
+            chats: c,
+          },
+        },
+        async function (error, success) {
+          if (error) {
+            console.log(error);
+          } else {
+            const u = await User.findById(c.user_id).select({
+              username: 1,
+              profile_image: 1,
+            });
+            c.username = u.username;
+            c.profile_image = u.profile_image;
+            io.to(room_id).emit("message", c);
           }
         }
       );
