@@ -191,7 +191,9 @@ io.on("connection", (socket) => {
     try {
       const user = await User.findOne({ id: user_id });
       const user2 = await User.findOne({ id: room_id });
-      const dm = await DM.findOne({ users: { $in: [user.id, room_id] } });
+      let arr = [user.id, user2.id];
+      arr.sort();
+      const dm = await DM.findOne({ users: arr });
       totalChats = dm ? dm.chats.length : 0; // 100
       totalPages = Math.ceil(totalChats / pageSize) || 1; //10
       currentPage = totalPages;
@@ -202,7 +204,7 @@ io.on("connection", (socket) => {
 
       let chats = [];
       oldstart = currentPage * pageSize - pageSize;
-      if (dm && user) {
+      if (dm && user && user2) {
         for (var i = oldstart; i < totalChats - skip; i++) {
           // console.log(i)
           const u = await User.findById(dm.chats[i].user_id).select({
@@ -236,26 +238,28 @@ io.on("connection", (socket) => {
       } else {
         if (user && user2) {
           const withoutroom = await DM.create({
-            users: [user.id, user2.id],
+            users: arr,
             chats: [],
           });
-          await socket.join(user.id + user2.id);
+          await socket.join(arr[0] + arr[1]);
           socket.emit("init", {
             chats: withoutroom.chats,
             currentPage,
             totalPages,
-            roomId: user.id + user2.id,
+            roomId: arr[0] + arr[1],
           });
         }
       }
     } catch (error) {
       console.log(error);
     }
-  }); 
+  });
   socket.on("loaddm", async ({ user_id, room_id, page_no }) => {
     const user = await User.findOne({ id: user_id });
     // const room_user = await User.findOne({ username: room_id });
-    const dm = await DM.findOne({ users: { $in: [user.id, room_id] } });
+    let arr = [user.id, room_id];
+    arr.sort();
+    const dm = await DM.findOne({ users: arr });
 
     totalChats = dm ? dm.chats.length : 0; // 100
     totalPages = Math.ceil(totalChats / pageSize) || 1; //10
@@ -307,8 +311,9 @@ io.on("connection", (socket) => {
   });
   socket.on("chatDM", async ({ chat, user_id, user2_id, room_id }) => {
     try {
-
       const msgId = new mongoose.Types.ObjectId();
+      let arr = [user_id, user2_id];
+      arr.sort();
       let c = {
         _id: msgId,
         user_id: chat.user_id,
@@ -323,7 +328,7 @@ io.on("connection", (socket) => {
         c.reply_to = chat.reply_to;
       }
       DM.findOneAndUpdate(
-        { users: { $in: [user_id, user2_id] } },
+        { users: arr },
         {
           $push: {
             chats: c,
