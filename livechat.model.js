@@ -35,9 +35,13 @@ const chatSchema = Schema({
 
 const roomSchema = Schema({
   room_admin: {
-    type: Schema.Types.ObjectId,
-    ref: "User",
+    type: String,
+    unique: true,
     required: true,
+  },
+  room_admin_userid: {
+    type: String,
+    unique: true,
   },
   chats: [chatSchema],
 });

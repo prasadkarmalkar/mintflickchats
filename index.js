@@ -393,14 +393,15 @@ io.on("connection", (socket) => {
   // For Live Chat
   socket.on("live_joinroom", async ({ user_id, room_id }) => {
     const user = await User.findById(user_id);
-    const room_user = await User.findONe({ username: room_id });
-    const room = await LiveRoom.findOne({ room_admin: room_user._id });
+    const room_user = await User.findOne({ username: room_id });
+    const room = await LiveRoom.findOne({ room_admin: room_user.username });
     if (room && user) {
-      await socket.join("live_" + room_user._id.toString());
-      socket.emit("live_init", room.chats);
+      await socket.join("live_" + room_user.username);
+      socket.emit("live_init", { chats: room.chats });
     } else if (user && room_user) {
       const withoutroom = await LiveRoom.create({
-        room_admin: room_user._id,
+        room_admin: room_user.username,
+        room_admin_userid: room_user.id,
         chats: [],
       });
       socket.emit("live_init", withoutroom.chats);
@@ -421,7 +422,6 @@ io.on("connection", (socket) => {
       if (chat.reply_to) {
         c.reply_to = chat.reply_to;
       }
-      console.log(c);
       LiveRoom.findOneAndUpdate(
         { room_admin: room_admin },
         {
@@ -434,7 +434,7 @@ io.on("connection", (socket) => {
             console.log(error);
           } else {
             console.log();
-            io.to("live_" + room_admin.toString()).emit("live_message", c);
+            io.to("live_" + room_admin).emit("live_message", c);
           }
         }
       );
