@@ -422,6 +422,9 @@ io.on("connection", (socket) => {
       if (chat.reply_to) {
         c.reply_to = chat.reply_to;
       }
+      if (chat.url) {
+        c.url = chat.url;
+      }
       LiveRoom.findOneAndUpdate(
         { room_admin: room_admin },
         {
