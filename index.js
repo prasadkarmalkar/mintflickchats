@@ -425,6 +425,43 @@ io.on("connection", (socket) => {
       if (chat.url) {
         c.url = chat.url;
       }
+      if (chat.value) {
+        c.value = chat.value;
+        const user = await User.findOne({ username: chat.username });
+        const roomAdmin = await User.findOne({ username: room_admin });
+        if (chat.value <= user.gems.balance) {
+          User.findOneAndUpdate(
+            { username: chat.username },
+            {
+              $set: {
+                "gems.balance": user.gems.balance - chat.value,
+              },
+            },
+            function (error, success) {
+              if (error) {
+                console.log(error);
+              }
+            }
+          );
+          console.log(roomAdmin.gems.balance);
+          console.log(roomAdmin.gems.balance + chat.value);
+          console.log(chat.value);
+          User.findOneAndUpdate(
+            { username: room_admin },
+            {
+              $set: {
+                "gems.balance": roomAdmin.gems.balance + chat.value,
+              },
+            },
+            function (error, success) {
+              if (error) {
+                console.log(error);
+              }
+            }
+          );
+        }
+      }
+
       LiveRoom.findOneAndUpdate(
         { room_admin: room_admin },
         {

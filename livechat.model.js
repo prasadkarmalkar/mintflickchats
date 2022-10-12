@@ -27,6 +27,9 @@ const chatSchema = Schema({
   reply_to: {
     type: Object,
   },
+  value: {
+    type: Number,
+  },
   createdAt: {
     type: Date,
     required: true,

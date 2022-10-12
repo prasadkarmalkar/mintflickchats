@@ -110,6 +110,28 @@ const userSchema = new Schema(
       type: String,
       default: "notseen",
     },
+    gems: {
+      type: Object,
+      default: {
+        balance: 0,
+        history: [],
+      },
+    },
+    coins: {
+      type: Object,
+      default: {
+        balance: 0,
+        history: [],
+        tasksPerformed: {
+          followedTwitter: false,
+          followedInstagram: false,
+          followedLinkedin: false,
+          followedDiscord: false,
+          firstPost: false,
+          followFive: false,
+        },
+      },
+    },
     thumbnail: { type: String },
     streamDetails: { type: Object, default: {} },
     streamSchedule: {
