@@ -93,56 +93,60 @@ io.on("connection", (socket) => {
     }
   });
   socket.on("loadmore", async ({ user_id, room_id, page_no }) => {
-    const user = await User.findById(user_id);
-    // const room_user = await User.findOne({ username: room_id });
-    const room = await Room.findOne({ room_admin: room_id });
+    try {
+      const user = await User.findById(user_id);
+      // const room_user = await User.findOne({ username: room_id });
+      const room = await Room.findOne({ room_admin: room_id });
 
-    totalChats = room ? room.chats.length : 0; // 100
-    totalPages = Math.ceil(totalChats / pageSize) || 1; //10
-    currentPage = page_no; //9
-    skip = Math.abs((currentPage - totalPages) * pageSize); // 10
-    // console.log("total "+ totalChats);
-    // console.log("Pages "+ totalPages);
-    // console.log(skip)
-    // console.log(oldstart);
+      totalChats = room ? room.chats.length : 0; // 100
+      totalPages = Math.ceil(totalChats / pageSize) || 1; //10
+      currentPage = page_no; //9
+      skip = Math.abs((currentPage - totalPages) * pageSize); // 10
+      // console.log("total "+ totalChats);
+      // console.log("Pages "+ totalPages);
+      // console.log(skip)
+      // console.log(oldstart);
 
-    let chats = [];
-    x = currentPage * pageSize - pageSize;
-    if (x < 0) {
-      x = 0;
-    }
-
-    if (room && user) {
-      // console.log("X "+x)
-      // console.log("oldstart "+oldstart)
-
-      for (var i = x; i < oldstart; i++) {
-        // console.log(i)
-        const u = await User.findById(room.chats[i].user_id).select({
-          username: 1,
-          profile_image: 1,
-        });
-
-        let chattemp = {
-          _id: room.chats[i]._id,
-          user_id: room.chats[i].user_id,
-          username: u.username,
-          profile_image: u.profile_image,
-          type: room.chats[i].type,
-          message: room.chats[i].message,
-          createdAt: room.chats[i].createdAt,
-        };
-        if (room.chats[i].url) {
-          chattemp.url = room.chats[i].url;
-        }
-        if (room.chats[i].reply_to) {
-          chattemp.reply_to = room.chats[i].reply_to;
-        }
-        chats.push(chattemp);
+      let chats = [];
+      x = currentPage * pageSize - pageSize;
+      if (x < 0) {
+        x = 0;
       }
-      oldstart = x;
-      // await socket.join(room_user._id.toString());
-      socket.emit("getmore", { chats, totalPages, currentPage });
+
+      if (room && user) {
+        // console.log("X "+x)
+        // console.log("oldstart "+oldstart)
+
+        for (var i = x; i < oldstart; i++) {
+          // console.log(i)
+          const u = await User.findById(room.chats[i].user_id).select({
+            username: 1,
+            profile_image: 1,
+          });
+
+          let chattemp = {
+            _id: room.chats[i]._id,
+            user_id: room.chats[i].user_id,
+            username: u.username,
+            profile_image: u.profile_image,
+            type: room.chats[i].type,
+            message: room.chats[i].message,
+            createdAt: room.chats[i].createdAt,
+          };
+          if (room.chats[i].url) {
+            chattemp.url = room.chats[i].url;
+          }
+          if (room.chats[i].reply_to) {
+            chattemp.reply_to = room.chats[i].reply_to;
+          }
+          chats.push(chattemp);
+        }
+        oldstart = x;
+        // await socket.join(room_user._id.toString());
+        socket.emit("getmore", { chats, totalPages, currentPage });
+      }
+    } catch (error) {
+      console.log(error);
     }
   });
   socket.on("chatMessage", async ({ chat, room_admin }) => {
@@ -292,58 +296,62 @@ io.on("connection", (socket) => {
     }
   });
   socket.on("loaddm", async ({ user_id, room_id, page_no }) => {
-    const user = await User.findOne({ id: user_id });
-    // const room_user = await User.findOne({ username: room_id });
-    let arr = [user.id, room_id];
-    arr.sort();
-    const dm = await DM.findOne({ users: arr });
+    try {
+      const user = await User.findOne({ id: user_id });
+      // const room_user = await User.findOne({ username: room_id });
+      let arr = [user.id, room_id];
+      arr.sort();
+      const dm = await DM.findOne({ users: arr });
 
-    totalChats = dm ? dm.chats.length : 0; // 100
-    totalPages = Math.ceil(totalChats / pageSize) || 1; //10
-    currentPage = page_no; //9
-    skip = Math.abs((currentPage - totalPages) * pageSize); // 10
-    // console.log("total "+ totalChats);
-    // console.log("Pages "+ totalPages);
-    // console.log(skip)
-    // console.log(oldstart);
+      totalChats = dm ? dm.chats.length : 0; // 100
+      totalPages = Math.ceil(totalChats / pageSize) || 1; //10
+      currentPage = page_no; //9
+      skip = Math.abs((currentPage - totalPages) * pageSize); // 10
+      // console.log("total "+ totalChats);
+      // console.log("Pages "+ totalPages);
+      // console.log(skip)
+      // console.log(oldstart);
 
-    let chats = [];
-    x = currentPage * pageSize - pageSize;
-    if (x < 0) {
-      x = 0;
-    }
-
-    if (dm && user) {
-      // console.log("X "+x)
-      // console.log("oldstart "+oldstart)
-
-      for (var i = x; i < oldstart; i++) {
-        // console.log(i)
-        const u = await User.findById(dm.chats[i].user_id).select({
-          username: 1,
-          profile_image: 1,
-        });
-
-        let chattemp = {
-          _id: dm.chats[i]._id,
-          user_id: dm.chats[i].user_id,
-          username: u.username,
-          profile_image: u.profile_image,
-          type: dm.chats[i].type,
-          message: dm.chats[i].message,
-          createdAt: dm.chats[i].createdAt,
-        };
-        if (dm.chats[i].url) {
-          chattemp.url = dm.chats[i].url;
-        }
-        if (dm.chats[i].reply_to) {
-          chattemp.reply_to = dm.chats[i].reply_to;
-        }
-        chats.push(chattemp);
+      let chats = [];
+      x = currentPage * pageSize - pageSize;
+      if (x < 0) {
+        x = 0;
       }
-      oldstart = x;
-      // await socket.join(room_user._id.toString());
-      socket.emit("getmore", { chats, totalPages, currentPage });
+
+      if (dm && user) {
+        // console.log("X "+x)
+        // console.log("oldstart "+oldstart)
+
+        for (var i = x; i < oldstart; i++) {
+          // console.log(i)
+          const u = await User.findById(dm.chats[i].user_id).select({
+            username: 1,
+            profile_image: 1,
+          });
+
+          let chattemp = {
+            _id: dm.chats[i]._id,
+            user_id: dm.chats[i].user_id,
+            username: u.username,
+            profile_image: u.profile_image,
+            type: dm.chats[i].type,
+            message: dm.chats[i].message,
+            createdAt: dm.chats[i].createdAt,
+          };
+          if (dm.chats[i].url) {
+            chattemp.url = dm.chats[i].url;
+          }
+          if (dm.chats[i].reply_to) {
+            chattemp.reply_to = dm.chats[i].reply_to;
+          }
+          chats.push(chattemp);
+        }
+        oldstart = x;
+        // await socket.join(room_user._id.toString());
+        socket.emit("getmore", { chats, totalPages, currentPage });
+      }
+    } catch (error) {
+      console.log(error);
     }
   });
   socket.on("chatDM", async ({ chat, user_id, user2_id, room_id }) => {
@@ -392,19 +400,25 @@ io.on("connection", (socket) => {
 
   // For Live Chat
   socket.on("live_joinroom", async ({ user_id, room_id }) => {
-    const user = await User.findById(user_id);
-    const room_user = await User.findOne({ username: room_id });
-    const room = await LiveRoom.findOne({ room_admin: room_user.username });
-    if (room && user) {
-      await socket.join("live_" + room_user.username);
-      socket.emit("live_init", { chats: room.chats });
-    } else if (user && room_user) {
-      const withoutroom = await LiveRoom.create({
-        room_admin: room_user.username,
-        room_admin_userid: room_user.id,
-        chats: [],
-      });
-      socket.emit("live_init", withoutroom.chats);
+    try {
+      const user = await User.findById(user_id);
+      const room_user = await User.findOne({ username: room_id });
+      if (user && room_user) {
+        const room = await LiveRoom.findOne({ room_admin: room_user.username });
+        if (room && user) {
+          await socket.join("live_" + room_user.username);
+          socket.emit("live_init", { chats: room.chats });
+        } else if (user && room_user) {
+          const withoutroom = await LiveRoom.create({
+            room_admin: room_user.username,
+            room_admin_userid: room_user.id,
+            chats: [],
+          });
+          socket.emit("live_init", withoutroom.chats);
+        }
+      }
+    } catch (error) {
+      console.log(error);
     }
   });
   socket.on("live_chatMessage", async ({ chat, room_admin }) => {
