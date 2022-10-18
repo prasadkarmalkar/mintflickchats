@@ -47,6 +47,29 @@ io.on("connection", (socket) => {
       let chats = [];
       oldstart = currentPage * pageSize - pageSize;
       if (room && user) {
+        const alreadyConv = user.conversations.find(
+          (c) => c.username == room_id && c.isGroup
+        );
+        if (!alreadyConv) {
+          User.updateOne(
+            { id: user.id },
+            {
+              $push: {
+                conversations: {
+                  user_id: room.room_admin_userid,
+                  room_id: room_id,
+                  username: room_id,
+                  isGroup: true,
+                },
+              },
+            },
+            function (error, success) {
+              if (error) {
+                res.send(error);
+              }
+            }
+          );
+        }
         for (var i = oldstart; i < totalChats - skip; i++) {
           // console.log(i)
           const u = await User.findById(room.chats[i].user_id).select({
@@ -76,6 +99,29 @@ io.on("connection", (socket) => {
         const room_user = await User.findOne({ username: room_id });
         console.log("getting room user");
         if (user && room_user) {
+          const alreadyConv = user.conversations.find(
+            (c) => c.username == room_id && c.isGroup
+          );
+          if (!alreadyConv) {
+            User.updateOne(
+              { id: user.id },
+              {
+                $push: {
+                  conversations: {
+                    user_id: room_user.id,
+                    room_id: room_id,
+                    username: room_id,
+                    isGroup: true,
+                  },
+                },
+              },
+              function (error, success) {
+                if (error) {
+                  res.send(error);
+                }
+              }
+            );
+          }
           const withoutroom = await Room.create({
             room_admin: room_user.username,
             room_admin_userid: room_user.id,
