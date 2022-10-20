@@ -37,6 +37,13 @@ const roomSchema = Schema({
     type: String,
     unique: true,
   },
+  users: {
+    type: Array,
+    default: [],
+  },
+  latestMessage: {
+    type: Object,
+  },
   chats: [chatSchema],
 });
 
@@ -45,8 +52,15 @@ const dmSchema = Schema({
     type: Array,
     required: true,
   },
+  usernames: {
+    type: Array,
+    required: true,
+  },
   room_id: {
     type: String,
+  },
+  latestMessage: {
+    type: Object,
   },
   chats: [chatSchema],
 });

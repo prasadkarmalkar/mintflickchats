@@ -47,29 +47,19 @@ io.on("connection", (socket) => {
       let chats = [];
       oldstart = currentPage * pageSize - pageSize;
       if (room && user) {
-        const alreadyConv = user.conversations.find(
-          (c) => c.username == room_id && c.isGroup
-        );
+        // const alreadyConv = user.conversations.find(
+        //   (c) => c.username == room_id && c.isGroup
+        // );
+        const alreadyConv = room.users.find((c) => c == user.id);
         if (!alreadyConv) {
-          User.updateOne(
-            { id: user.id },
-            {
-              $push: {
-                conversations: {
-                  user_id: room.room_admin_userid,
-                  room_id: room_id,
-                  username: room_id,
-                  isGroup: true,
-                },
-              },
-            },
-            function (error, success) {
-              if (error) {
-                res.send(error);
-              }
-            }
-          );
+          room.users.push(user.id);
+          await room.save();
         }
+
+        const rooms = await Room.find({ users: user.id }).select("-chats");
+        const dms = await DM.find({ users: user.id }).select("-chats");
+        socket.emit("conversations", { rooms: rooms, dms: dms });
+
         for (var i = oldstart; i < totalChats - skip; i++) {
           // console.log(i)
           const u = await User.findById(room.chats[i].user_id).select({
@@ -99,32 +89,10 @@ io.on("connection", (socket) => {
         const room_user = await User.findOne({ username: room_id });
         console.log("getting room user");
         if (user && room_user) {
-          const alreadyConv = user.conversations.find(
-            (c) => c.username == room_id && c.isGroup
-          );
-          if (!alreadyConv) {
-            User.updateOne(
-              { id: user.id },
-              {
-                $push: {
-                  conversations: {
-                    user_id: room_user.id,
-                    room_id: room_id,
-                    username: room_id,
-                    isGroup: true,
-                  },
-                },
-              },
-              function (error, success) {
-                if (error) {
-                  res.send(error);
-                }
-              }
-            );
-          }
           const withoutroom = await Room.create({
             room_admin: room_user.username,
             room_admin_userid: room_user.id,
+            users: [room_user.id],
             chats: [],
           });
           socket.emit("init", {
@@ -290,44 +258,11 @@ io.on("connection", (socket) => {
           let room_id = arr[0] + arr[1];
           const withoutroom = await DM.create({
             users: arr,
+            usernames: [user.username, user2.username],
             room_id: room_id,
             chats: [],
           });
-          User.updateOne(
-            { id: user.id },
-            {
-              $push: {
-                conversations: {
-                  user_id: user2.id,
-                  room_id: room_id,
-                  username: user2.username,
-                },
-              },
-            },
-            function (error, success) {
-              if (error) {
-                res.send(error);
-              }
-            }
-          );
-          User.updateOne(
-            { id: user2.id },
-            {
-              $push: {
-                conversations: {
-                  user_id: user.id,
-                  room_id: room_id,
-                  username: user.username,
-                },
-              },
-            },
-            function (error, success) {
-              if (error) {
-                res.send(error);
-              }
-            }
-          );
-
+          
           await socket.join(arr[0] + arr[1]);
           socket.emit("init", {
             chats: withoutroom.chats,
