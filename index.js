@@ -262,7 +262,7 @@ io.on("connection", (socket) => {
             room_id: room_id,
             chats: [],
           });
-          
+
           await socket.join(arr[0] + arr[1]);
           socket.emit("init", {
             chats: withoutroom.chats,
@@ -420,7 +420,7 @@ io.on("connection", (socket) => {
       if (chat.url) {
         c.url = chat.url;
       }
-      if (chat.value) {
+      if (chat.value && chat.username != room_admin) {
         c.value = chat.value;
         const user = await User.findOne({ username: chat.username });
         const roomAdmin = await User.findOne({ username: room_admin });
@@ -438,9 +438,9 @@ io.on("connection", (socket) => {
               }
             }
           );
-          console.log(roomAdmin.gems.balance);
-          console.log(roomAdmin.gems.balance + chat.value);
-          console.log(chat.value);
+          // console.log(roomAdmin.gems.balance);
+          // console.log(roomAdmin.gems.balance + chat.value);
+          // console.log(chat.value);
           User.findOneAndUpdate(
             { username: room_admin },
             {
